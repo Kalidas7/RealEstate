@@ -1,0 +1,21 @@
+# --- Python / Django ---
+venv/
+__pycache__/
+*.py[cod]
+db.sqlite3
+.env
+
+# --- React Native / Expo ---
+node_modules/
+.expo/
+dist/
+npm-debug.log*
+yarn-error.log*
+
+# --- IDE (WebStorm/VS Code) ---
+.idea/
+.vscode/
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db

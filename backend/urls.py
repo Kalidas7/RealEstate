@@ -1,4 +1,8 @@
+# backend/urls.py
+from django.contrib import admin
+from django.urls import path, include
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/register/', register_user), 
+    path('api/', include('api.urls')), # This "includes" the maps from your api module
 ]

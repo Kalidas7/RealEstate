@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, UserLike
+from .models import UserProfile, UserLike, Property
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,3 +19,8 @@ class UserLikeSerializer(serializers.ModelSerializer):
         model = UserLike
         fields = ['id', 'user', 'liked_item_id', 'created_at']
         read_only_fields = ['user', 'created_at']
+
+class PropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = '__all__'

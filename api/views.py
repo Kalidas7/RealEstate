@@ -5,8 +5,9 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status
-from .models import UserProfile, UserLike
-from .serializers import UserSerializer, UserLikeSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import UserProfile, UserLike, Property
+from .serializers import UserSerializer, UserLikeSerializer, PropertySerializer
 
 @api_view(['POST'])
 def check_email(request):
@@ -23,7 +24,7 @@ def check_email(request):
 @api_view(['POST'])
 def login_user(request):
     """
-    Logs in a user with email and password.
+    Logs in a user with email and password. Returns JWT tokens.
     """
     email = request.data.get('email')
     password = request.data.get('password')
@@ -33,16 +34,46 @@ def login_user(request):
 
     # Django's authenticate takes username, so we fetch the user by email first
     try:
-        user_obj = User.objects.get(email=email)
+        # Use filter().first() to handle potential duplicates gracefully
+        user_obj = User.objects.filter(email=email).first()
+        
+        if not user_obj:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         user = authenticate(username=user_obj.username, password=password)
         
         if user:
-            serializer = UserSerializer(user)
-            return Response({"message": "Login successful", "user": serializer.data}, status=status.HTTP_200_OK)
+            # Ensure user has a profile
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            # Return simple user data without serializer to avoid errors
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'profile': {
+                    'contact_number': profile.contact_number if profile.contact_number else '',
+                    'profile_pic': request.build_absolute_uri(profile.profile_pic.url) if profile.profile_pic else None
+                }
+            }
+            return Response({
+                "message": "Login successful",
+                "user": user_data,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
+            }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        # Catch any other errors and return them as JSON
+        return Response({"error": f"Server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
@@ -57,6 +88,10 @@ def signup_user(request):
 
     if not email or not password:
         return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if email already exists
+    if User.objects.filter(email=email).exists():
+        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(email=email).exists():
         return Response({"error": "User with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
@@ -113,3 +148,13 @@ def user_likes(request):
                 return Response({"message": "Already liked"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
              return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def get_properties(request):
+    """
+    Returns a list of all properties.
+    """
+    properties = Property.objects.all()
+    # Pass request context for absolute URLs
+    serializer = PropertySerializer(properties, many=True, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,10 +1,34 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { StyleSheet, View, Dimensions, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window');
+
+function AnimatedTabIcon({ name, color, focused }) {
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: focused ? 1.1 : 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 5,
+    }).start();
+  }, [focused]);
+
+  return (
+    <View style={iconStyles.container}>
+      <Animated.View
+        style={{
+          transform: [{ scale: scaleAnim }],
+        }}>
+        <Ionicons name={name} size={22} color={color} />
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -17,8 +41,10 @@ export default function TabLayout() {
         tabBarStyle: {
           position: 'absolute',
           bottom: 50,
-          left: width * 0.25,
-          right: width * 0.25,
+          left: 0,
+          right: 0,
+          marginHorizontal: (width - 300) / 2,
+          width: 300,
           height: 60,
           backgroundColor: 'transparent',
           borderRadius: 30,
@@ -60,13 +86,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[iconStyles.container, focused && iconStyles.activeContainer]}>
-              <Ionicons
-                name="home-outline"
-                size={22}
-                color={color}
-              />
-            </View>
+            <AnimatedTabIcon name="home-outline" color={color} focused={focused} />
           ),
         }}
       />
@@ -76,13 +96,7 @@ export default function TabLayout() {
         options={{
           title: 'Bookings',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[iconStyles.container, focused && iconStyles.activeContainer]}>
-              <Ionicons
-                name="calendar-outline"
-                size={22}
-                color={color}
-              />
-            </View>
+            <AnimatedTabIcon name="calendar-outline" color={color} focused={focused} />
           ),
         }}
       />
@@ -90,21 +104,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Chat',
+          title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[iconStyles.container, focused && iconStyles.activeContainer]}>
-              <Ionicons
-                name="chatbubble-outline"
-                size={22}
-                color={color}
-              />
-            </View>
+            <AnimatedTabIcon name="person-outline" color={color} focused={focused} />
           ),
         }}
       />
     </Tabs>
   );
-} 
+}
 
 const iconStyles = StyleSheet.create({
   container: {
@@ -112,8 +120,5 @@ const iconStyles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  activeContainer: {
-    // Color change handles the active state
   },
 });

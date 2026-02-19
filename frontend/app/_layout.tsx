@@ -5,12 +5,8 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-// export const unstable_settings = {
-//   anchor: '(tabs)',
-// };
-
 export default function RootLayout() {
-  const colorScheme = 'dark'; // Force dark theme
+  const colorScheme = useColorScheme(); // Detect system theme
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -19,7 +15,9 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="light" />
+
+      {/* Status bar adapts too */}
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );
 }

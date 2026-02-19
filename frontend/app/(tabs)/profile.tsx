@@ -51,21 +51,26 @@ export default function ProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            setUser(null); // Clear state immediately
+                            setUser(null);
+                            await AsyncStorage.removeItem('user');
+                            await AsyncStorage.removeItem('access_token');
+                            await AsyncStorage.removeItem('refresh_token');
 
-                            // Clear all storage
-                            const keys = ['user', 'access_token', 'refresh_token'];
-                            await AsyncStorage.multiRemove(keys);
+                            const check = await AsyncStorage.getItem('user');
+                            if (check) {
+                                console.warn('Logout verify failed, force clearing again');
+                                await AsyncStorage.clear();
+                            }
 
-                            // Double check or just wait a tick
-                            await new Promise(resolve => setTimeout(resolve, 100));
-
-                            console.log('Logout complete, navigating to login');
+                            console.log('Logout complete, verified, navigating to login');
                         } catch (error) {
                             console.error('Logout error:', error);
+                            await AsyncStorage.clear();
                         } finally {
-                            // Always navigate
-                            router.replace('/');
+                            router.replace({
+                                pathname: '/',
+                                params: { logout: 'true' }
+                            });
                         }
                     },
                 },

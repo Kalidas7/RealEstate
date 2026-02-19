@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ const API_URL = 'http://192.168.1.11:8000/api';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -22,8 +23,16 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // If we just logged out, don't auto-redirect
+    if (params.logout === 'true') {
+      // Force clear ALL storage
+      AsyncStorage.clear().then(() => {
+        console.log('All storage cleared on logout');
+      });
+      return; // Stay on login screen
+    }
     checkUser();
-  }, []);
+  }, [params.logout]);
 
   const checkUser = async () => {
     try {
@@ -33,6 +42,8 @@ export default function LoginScreen() {
         const parsed = JSON.parse(user);
         console.log('Parsed user:', parsed);
         router.replace('/(tabs)');
+      } else {
+        console.log('No user found, staying on login');
       }
     } catch (e) {
       console.error('Error checking user:', e);

@@ -19,3 +19,11 @@ yarn-error.log*
 # --- OS Specific ---
 .DS_Store
 Thumbs.db
+
+# --- 3D Models / Media ---
+backend/media/
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.bin
